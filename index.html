@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="shortcut icon" href="./img/logo.fav.png" type="image/png">
+<title>Elizabeth's Doceria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Great+Vibes&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="hero">
+  <svg class="crown" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><path d="M10 65 L2 22 L26 40 L50 10 L74 40 L98 22 L90 65 Z M8 72 h84 v8 h-84 Z"/></svg>
+  <div class="brand-name" id="heroName">Elizabeth's</div>
+  <div class="brand-sub" id="heroSub">Doceria</div>
+  <svg class="flourish" viewBox="0 0 180 14"><path d="M0 7 H70 M110 7 H180" stroke="#E9D8AE" stroke-width="1.2"/><circle cx="90" cy="7" r="5" fill="none" stroke="#E9D8AE" stroke-width="1.2"/></svg>
+  <h1>Doces que aquecem o coração e adoçam o seu dia</h1>
+  <p class="tag">Bolos, brownies e doces artesanais, feitos na hora e entregues com carinho.</p>
+  <div class="hero-actions">
+    <a id="customLink" href="#" target="_blank" rel="noopener" class="btn btn-gold">Monte seu doce do seu jeito</a>
+    <a id="instaLink" href="#" target="_blank" rel="noopener" class="btn btn-outline">Instagram</a>
+  </div>
+</div>
+
+<div class="nav-wrap" id="navWrap">
+  <div class="nav-scroll" id="navScroll"></div>
+</div>
+
+<div class="section" id="cardapio">
+  <div id="sections"></div>
+</div>
+
+<footer>
+  <div class="brand-name">Elizabeth's</div>
+  <div class="footer-links">
+    <a id="footWhats" href="#" target="_blank" rel="noopener">Pedir no WhatsApp</a>
+    <a id="footInsta" href="#" target="_blank" rel="noopener">Instagram</a>
+  </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+<div id="modalRoot"></div>
+<div id="cartFabWrap"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-init.js"></script>
+<script src="store.js"></script>
+</body>
+</html>

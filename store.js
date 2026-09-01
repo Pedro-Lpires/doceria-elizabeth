@@ -1,11 +1,3 @@
-/* ============================================================
-   store.js — Site do cliente (Elizabeth's Doceria)
-   Lê produtos e tipos do Firestore em tempo real. Tem galeria
-   de fotos por produto, sacola de compras (localStorage) e
-   fechamento de pedido (retirada / entrega com taxa por
-   distância / a combinar) que finaliza no WhatsApp.
-   ============================================================ */
-
 const STORE = {
   name: "Elizabeth's",
   sub: "Doceria",
@@ -23,24 +15,22 @@ document.getElementById('footWhats').href = `https://wa.me/${STORE.whatsapp}?tex
 document.getElementById('customLink').href = `https://wa.me/${STORE.whatsapp}?text=${encodeURIComponent('Olá! Eu queria montar um doce do meu jeito, pode me ajudar?')}`;
 
 let products = [];
-let categoriesMeta = []; // [{name, order, featured}] ordenado
+let categoriesMeta = [];
 let activeCategory = 'Todos';
 let cart = [];
 
-// estado do modal de detalhe do produto
 let currentDetailProduct = null;
 let galleryIndex = 0;
 let detailQty = 1;
 
-// estado do checkout
-let checkoutStep = 'cart'; // cart | fulfillment | summary
-let fulfillmentType = null; // retirada | entrega | combinar
-let deliveryMethod = null; // 'gps' | 'cep' | null (indica que já tentou calcular)
-let deliveryDistanceKm = null; // km calculado, ou null se não calculado/falhou
-let deliveryFeeComputed = null; // R$ calculado, ou null se precisa confirmar depois
+let checkoutStep = 'cart';
+let fulfillmentType = null;
+let deliveryMethod = null;
+let deliveryDistanceKm = null;
+let deliveryFeeComputed = null;
 let deliveryCepInput = '';
 let deliveryNote = '';
-let storeCoords = null; // {lat, lon} da loja, calculado uma vez e guardado em cache
+let storeCoords = null;
 
 const productsCol = db.collection('doceria_produtos');
 const categoriesCol = db.collection('doceria_categorias');
@@ -64,7 +54,7 @@ async function seedIfEmpty(){
       }));
     }
   }catch(e){
-    console.error('Erro ao semear catálogo inicial', e);
+    console.error('Error seeding initial catalog', e);
   }
 }
 
@@ -73,7 +63,7 @@ function startListening(){
     products = snap.docs.map(d=>({id:d.id, ...d.data()}));
     render();
   }, (err)=>{
-    console.error('Erro ao carregar cardápio em tempo real', err);
+    console.error('Error loading menu in real-time', err);
     document.getElementById('sections').innerHTML = emptyState('Não foi possível carregar o cardápio agora. Recarregue a página.');
   });
 
@@ -83,7 +73,7 @@ function startListening(){
       .sort((a,b)=>a.order-b.order);
     render();
   }, (err)=>{
-    console.error('Erro ao carregar tipos', err);
+    console.error('Error loading categories', err);
   });
 }
 
@@ -95,7 +85,6 @@ async function init(){
   startListening();
 }
 
-/* ---------------- CATEGORIAS ---------------- */
 function getCategories(){
   const present = new Set(products.filter(p=>!p.hidden).map(p=>p.category).filter(Boolean));
   const known = categoriesMeta.filter(c=>present.has(c.name)).map(c=>c.name);
@@ -112,7 +101,6 @@ function getProductImages(p){
   return (p && p.images && p.images.length) ? p.images : (p && p.image ? [p.image] : []);
 }
 
-/* ---------------- RENDER PRINCIPAL ---------------- */
 function render(){
   renderNav();
   renderSections();
@@ -200,11 +188,6 @@ function formatPrice(v){
 function escapeHtml(s){ return String(s??'').replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
 function escapeAttr(s){ return escapeHtml(s); }
 
-function closeModalRoot(){ document.getElementById('modalRoot').innerHTML=''; }
-
-/* ============================================================
-   MODAL DE DETALHE DO PRODUTO (galeria + descrição + qtd)
-   ============================================================ */
 function openProductModal(id){
   const p = products.find(p=>p.id===id);
   if(!p) return;
@@ -263,9 +246,6 @@ function renderProductModal(){
   };
 }
 
-/* ============================================================
-   SACOLA (carrinho) — localStorage
-   ============================================================ */
 function loadCart(){
   try{
     const raw = localStorage.getItem('doceria_cart_v1');
@@ -275,7 +255,7 @@ function loadCart(){
   }
 }
 function saveCart(){
-  try{ localStorage.setItem('doceria_cart_v1', JSON.stringify(cart)); }catch(e){ /* silencioso */ }
+  try{ localStorage.setItem('doceria_cart_v1', JSON.stringify(cart)); }catch(e){}
 }
 
 function cartTotal(){ return cart.reduce((s,c)=>s + c.price*c.qty, 0); }
@@ -341,20 +321,16 @@ function cartItemHtml(item, readonly){
     </div>`;
 }
 
-/* ============================================================
-   CHECKOUT (sacola → tipo de entrega → resumo → WhatsApp)
-   ============================================================ */
 function openCartModal(){
   renderCartModal();
 }
 
-/* ---- Geolocalização / CEP → distância real até a loja ---- */
 async function ensureStoreCoords(){
   if(storeCoords) return storeCoords;
   try{
     const cached = localStorage.getItem('doceria_store_coords_v1');
     if(cached){ storeCoords = JSON.parse(cached); return storeCoords; }
-  }catch(e){ /* ignora cache inválido */ }
+  }catch(e){}
   try{
     const viacepRes = await fetch(`https://viacep.com.br/ws/${STORE.cep}/json/`);
     const viacepData = await viacepRes.json();

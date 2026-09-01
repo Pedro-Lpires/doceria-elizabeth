@@ -1,18 +1,10 @@
-/* ============================================================
-   admin.js — Painel administrativo (Elizabeth's Doceria)
-   Lê e grava direto no Firestore (projeto doceria-nick), via
-   SDK compat (funciona com <script> normal, sem servidor):
-     - coleção doceria_produtos → um documento por produto
-     - doc doceria_config/admin → { password }
-   ============================================================ */
-
 const DEFAULT_PASS = "eliza2026";
 const productsCol = db.collection('doceria_produtos');
 const configDoc = db.collection('doceria_config').doc('admin');
 const categoriesCol = db.collection('doceria_categorias');
 
 let products = [];
-let categoriesMeta = []; // [{name, order, featured}] ordenado
+let categoriesMeta = [];
 let categoriesLoadedOnce = false;
 let productsLoadedOnce = false;
 let isAuthed = false;
@@ -35,7 +27,6 @@ function toast(msg){
   toast._timer = setTimeout(()=>t.classList.remove('show'), 2600);
 }
 
-/* ---------------- SENHA ---------------- */
 async function loadPassword(){
   try{
     const snap = await configDoc.get();
@@ -57,7 +48,6 @@ async function savePassword(newPass){
   }
 }
 
-/* ---------------- PRODUTOS ---------------- */
 function startListening(){
   productsCol.onSnapshot((snap)=>{
     products = snap.docs.map(d=>({id:d.id, ...d.data()}));
@@ -74,7 +64,6 @@ function startListening(){
   });
 }
 
-/* ---------------- TIPOS / SEÇÕES ---------------- */
 function startListeningCategories(){
   categoriesCol.onSnapshot((snap)=>{
     categoriesMeta = snap.docs
@@ -91,9 +80,6 @@ function startListeningCategories(){
   });
 }
 
-// Se ainda não existe nenhum tipo cadastrado mas já existem produtos com
-// categorias antigas (texto livre), cria os tipos automaticamente uma vez,
-// na ordem em que aparecem, pra não perder nada do que já foi cadastrado.
 let backfillRan = false;
 async function maybeBackfillCategories(){
   if(backfillRan) return;
@@ -222,7 +208,6 @@ async function saveProductWrite(promiseFn, showToast=true){
   }
 }
 
-/* ---------------- LOGIN ---------------- */
 function renderLogin(errorMsg){
   const root = document.getElementById('root');
   root.innerHTML = `
@@ -253,7 +238,6 @@ function renderLogin(errorMsg){
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
 }
 
-/* ---------------- PAINEL ---------------- */
 function renderPanel(){
   const root = document.getElementById('root');
   root.innerHTML = `
@@ -446,7 +430,7 @@ function compressImageFile(file){
 
         let quality = 0.72;
         let dataUrl = canvas.toDataURL('image/jpeg', quality);
-        const maxChars = 260000; // ~190KB por foto, com folga pra caber até 4 no limite de 1MB do documento
+        const maxChars = 260000;
         while(dataUrl.length > maxChars && quality > 0.3){
           quality -= 0.08;
           dataUrl = canvas.toDataURL('image/jpeg', quality);
@@ -463,7 +447,7 @@ function compressImageFile(file){
 
 async function handleImageSelect(e){
   const files = Array.from(e.target.files || []);
-  e.target.value = ''; // permite selecionar o mesmo arquivo de novo depois
+  e.target.value = '';
   if(!files.length) return;
   const room = MAX_IMAGES - pendingImages.length;
   if(room <= 0){ toast(`Máximo de ${MAX_IMAGES} fotos por produto.`); return; }
@@ -576,7 +560,6 @@ async function handleDelete(id){
   if(ok && editingId===id) resetForm();
 }
 
-/* ---------------- INIT ---------------- */
 async function init(){
   document.getElementById('root').innerHTML = `<div class="loading">Carregando...</div>`;
   await loadPassword();

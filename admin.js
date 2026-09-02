@@ -570,7 +570,10 @@ function startEdit(id){
   document.getElementById('fPrice').value = p.price;
   document.getElementById('fCategory').value = p.category;
   renderImageThumbs();
-  document.querySelector('.modal.wide').scrollIntoView({behavior:'smooth'});
+  document.getElementById('formTitle').scrollIntoView({
+  behavior: 'smooth',
+  block: 'start'
+});
 }
 
 async function handleDelete(id){

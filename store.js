@@ -601,7 +601,13 @@ function buildWhatsAppMessage(fee, total){
   }
   return lines.join('\n');
 }
+function closeModalRoot(){
+  const root = document.getElementById('modalRoot');
 
+  if(root){
+    root.innerHTML = '';
+  }
+}
 function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;

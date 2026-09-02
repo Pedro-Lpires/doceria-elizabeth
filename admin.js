@@ -1,6 +1,7 @@
-const DEFAULT_PASS = "eliza2026";
+
+const ADMIN_EMAIL = "plucas150804@gmail.com";
 const productsCol = db.collection('doceria_produtos');
-const configDoc = db.collection('doceria_config').doc('admin');
+
 const categoriesCol = db.collection('doceria_categorias');
 
 let products = [];
@@ -11,7 +12,7 @@ let isAuthed = false;
 let editingId = null;
 let pendingImages = [];
 const MAX_IMAGES = 4;
-let currentPassword = null;
+
 
 function formatPrice(v){
   return Number(v).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
@@ -27,26 +28,7 @@ function toast(msg){
   toast._timer = setTimeout(()=>t.classList.remove('show'), 2600);
 }
 
-async function loadPassword(){
-  try{
-    const snap = await configDoc.get();
-    currentPassword = snap.exists ? (snap.data().password || DEFAULT_PASS) : DEFAULT_PASS;
-  }catch(e){
-    console.error('Erro ao carregar senha, usando padrão', e);
-    currentPassword = DEFAULT_PASS;
-  }
-}
 
-async function savePassword(newPass){
-  try{
-    await configDoc.set({password:newPass}, {merge:true});
-    currentPassword = newPass;
-    return true;
-  }catch(e){
-    console.error('Erro ao salvar nova senha', e);
-    return false;
-  }
-}
 
 function startListening(){
   productsCol.onSnapshot((snap)=>{
@@ -226,14 +208,25 @@ function renderLogin(errorMsg){
     </div>`;
   const input = document.getElementById('passInput');
   input.focus();
-  const tryLogin = ()=>{
-    if(input.value === currentPassword){
-      isAuthed = true;
-      renderPanel();
-    } else {
-      renderLogin('Senha incorreta.');
-    }
-  };
+  const tryLogin = async ()=>{
+  const password = input.value;
+
+  if(!password){
+    renderLogin('Digite a senha.');
+    return;
+  }
+
+  try{
+    await firebase.auth().signInWithEmailAndPassword(ADMIN_EMAIL, password);
+
+    isAuthed = true;
+    renderPanel();
+
+  }catch(error){
+    console.error('Erro no login:', error);
+    renderLogin('Senha incorreta.');
+  }
+};
   document.getElementById('doLogin').onclick = tryLogin;
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
 }
@@ -318,7 +311,14 @@ function renderPanel(){
       <div id="catItems"></div>
     </div>`;
 
-  document.getElementById('logoutBtn').onclick = (e)=>{ e.preventDefault(); isAuthed=false; renderLogin(); };
+  document.getElementById('logoutBtn').onclick = async (e)=>{
+  e.preventDefault();
+
+  await firebase.auth().signOut();
+
+  isAuthed = false;
+  renderLogin();
+};
   document.getElementById('cancelForm').onclick = resetForm;
   document.getElementById('imgDrop').onclick = ()=>document.getElementById('imgInput').click();
   document.getElementById('imgInput').addEventListener('change', handleImageSelect);
@@ -345,18 +345,21 @@ async function handleChangePassword(){
   const newPass = document.getElementById('pwNew').value;
   const confirmPass = document.getElementById('pwConfirm').value;
   const errBox = document.getElementById('pwErr');
+
   errBox.style.display = 'none';
 
-  if(oldPass !== currentPassword){
-    errBox.textContent = 'Senha atual incorreta.';
+  if(!oldPass || !newPass || !confirmPass){
+    errBox.textContent = 'Preencha todos os campos.';
     errBox.style.display = 'block';
     return;
   }
-  if(newPass.length < 4){
-    errBox.textContent = 'A nova senha precisa ter pelo menos 4 caracteres.';
+
+  if(newPass.length < 6){
+    errBox.textContent = 'A nova senha precisa ter pelo menos 6 caracteres.';
     errBox.style.display = 'block';
     return;
   }
+
   if(newPass !== confirmPass){
     errBox.textContent = 'As senhas novas não são iguais.';
     errBox.style.display = 'block';
@@ -364,20 +367,36 @@ async function handleChangePassword(){
   }
 
   const btn = document.getElementById('pwSave');
-  btn.disabled = true; btn.textContent = 'Salvando...';
-  const ok = await savePassword(newPass);
-  btn.disabled = false; btn.textContent = 'Salvar nova senha';
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
 
-  if(ok){
+  try{
+    const user = firebase.auth().currentUser;
+
+    const credential = firebase.auth.EmailAuthProvider.credential(
+      ADMIN_EMAIL,
+      oldPass
+    );
+
+    await user.reauthenticateWithCredential(credential);
+    await user.updatePassword(newPass);
+
     toast('Senha alterada com sucesso!');
-    document.getElementById('pwOld').value='';
-    document.getElementById('pwNew').value='';
-    document.getElementById('pwConfirm').value='';
-    document.getElementById('pwBox').style.display='none';
-  } else {
-    errBox.textContent = 'Não foi possível salvar a nova senha. Tente de novo.';
+
+    document.getElementById('pwOld').value = '';
+    document.getElementById('pwNew').value = '';
+    document.getElementById('pwConfirm').value = '';
+    document.getElementById('pwBox').style.display = 'none';
+
+  }catch(error){
+    console.error('Erro ao alterar senha:', error);
+
+    errBox.textContent = 'Senha atual incorreta ou não foi possível alterar a senha.';
     errBox.style.display = 'block';
   }
+
+  btn.disabled = false;
+  btn.textContent = 'Salvar nova senha';
 }
 
 function resetForm(){
@@ -562,7 +581,7 @@ async function handleDelete(id){
 
 async function init(){
   document.getElementById('root').innerHTML = `<div class="loading">Carregando...</div>`;
-  await loadPassword();
+ 
   startListening();
   startListeningCategories();
   renderLogin();
